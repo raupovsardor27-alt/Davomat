@@ -7,60 +7,88 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root {
-  --bg: var(--tg-theme-bg-color, #ffffff);
-  --fg: var(--tg-theme-text-color, #111111);
-  --hint: var(--tg-theme-hint-color, #7a7a7a);
-  --btn: var(--tg-theme-button-color, #2481cc);
-  --btnfg: var(--tg-theme-button-text-color, #ffffff);
-  --card: var(--tg-theme-secondary-bg-color, #f1f3f5);
-  --ok: #2e9e5b; --bad: #d64545; --warn: #d98a00;
+  --paper: #f5f1e6; --surface: #fffdf8; --ink: #0b1a3a; --muted: #5d6a85; --rule: #e2d9bd;
+  --navy: #0a2150; --navy-d: #061532; --gold: #c9a24a; --gold-l: #e8cc82; --gold-d: #96762b; --field: #fffdf8;
+  --ok: #1b8a5a; --warn: #b3541e; --bad: #c0392b;
+  --bg: var(--paper); --fg: var(--ink); --hint: var(--muted); --card: var(--surface);
+  --serif: Georgia, "Palatino Linotype", "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #050f24; --surface: #0b1c40; --ink: #eef2fb; --muted: #9fb0d3; --rule: #1f3361; --field: #050f24;
+    --ok: #38b27d; --warn: #e08a4f; --bad: #e5604f; }
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); color: var(--fg);
-  font: 16px/1.4 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-body { padding: 14px 14px calc(78px + env(safe-area-inset-bottom, 0px)); }
-h1 { font-size: 20px; margin: 4px 0 12px; }
-h2 { font-size: 16px; margin: 18px 0 8px; }
-.card { background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
-.muted { color: var(--hint); font-size: 14px; }
-.big { font-size: 26px; font-weight: 700; }
+html, body { margin: 0; background: var(--paper); color: var(--ink);
+  font: 16px/1.45 "Segoe UI", Roboto, -apple-system, "Helvetica Neue", Arial, sans-serif; font-variant-numeric: tabular-nums; }
+body { padding: 0 0 calc(76px + env(safe-area-inset-bottom, 0px)); }
+section, #loading { padding: 0 16px; }
+.top { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; color: #fff;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 16px; border-bottom: 3px solid var(--gold);
+  background: repeating-linear-gradient(135deg, rgba(232,204,130,.05) 0 2px, transparent 2px 9px), linear-gradient(165deg, var(--navy), var(--navy-d)); }
+.seal { flex: none; width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--gold); display: grid; place-items: center;
+  font: 700 22px var(--serif); color: var(--gold-l); box-shadow: inset 0 0 0 3px rgba(201,162,74,.28); }
+.top b { display: block; font: 700 19px/1.2 var(--serif); letter-spacing: .3px; }
+.top small { display: block; font-size: 13px; color: var(--gold-l); opacity: .95; }
+h1 { font: 700 24px/1.25 var(--serif); margin: 0 0 14px; color: var(--ink); }
+h2 { font: 700 17px var(--serif); margin: 22px 0 10px; padding-top: 14px; border-top: 1px solid var(--gold); }
+.card { background: var(--surface); border: 1px solid var(--rule); border-top: 3px solid var(--gold); border-radius: 6px; padding: 14px 16px; margin-bottom: 14px; }
+.muted { color: var(--muted); font-size: 14px; }
+.big { font: 700 30px/1.2 var(--serif); }
 .ok { color: var(--ok); } .bad { color: var(--bad); } .warn { color: var(--warn); }
 button, select, input { font: inherit; }
-.punch { width: 100%; height: 76px; border: 0; border-radius: 18px; font-size: 22px; font-weight: 700;
-  background: var(--btn); color: var(--btnfg); margin: 6px 0 10px; }
-.punch:disabled { opacity: .55; }
-.btn { border: 0; border-radius: 12px; padding: 12px 14px; background: var(--btn); color: var(--btnfg); font-weight: 600; width: 100%; margin-top: 8px; }
-.btn.alt { background: var(--card); color: var(--fg); }
-.btn:disabled { opacity: .55; }
+.punch { width: 100%; height: 88px; border: 0; border-radius: 12px; font: 700 20px var(--serif); letter-spacing: .3px; margin: 4px 0 10px;
+  transition: transform .08s; }
+.punch:active { transform: translateY(2px); }
+.punch:disabled { opacity: .45; }
+.punchRow { gap: 10px; margin: 4px 0 10px; }
+.punchRow .punch { margin: 0; padding: 0 6px; }
+.punch.in { background: linear-gradient(180deg, var(--gold-l), var(--gold)); color: var(--navy-d); border-bottom: 4px solid var(--gold-d); box-shadow: 0 8px 18px rgba(150,118,43,.35); }
+.punch.out { background: linear-gradient(180deg, var(--navy), var(--navy-d)); color: var(--gold-l); border: 2px solid var(--gold); }
+.punch.ping { background: var(--warn); color: #fff; margin-top: 0; }
+.btn { border: 0; border-radius: 8px; padding: 13px 14px; background: var(--navy); color: var(--gold-l); font-weight: 700; width: 100%; margin-top: 10px; border-bottom: 3px solid var(--gold); }
+.btn.alt { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+.btn:disabled { opacity: .5; }
+button:focus-visible, .btn:focus-visible, input:focus-visible, select:focus-visible, label.btn:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
 .msg { min-height: 22px; font-weight: 600; margin: 4px 0 8px; white-space: pre-line; }
-.row { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(127,127,127,.2); }
+.row { display: flex; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--rule); }
 .row:last-child { border-bottom: 0; }
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-.stat { background: var(--card); border-radius: 14px; padding: 12px; }
-.stat b { display: block; font-size: 26px; }
-details { background: var(--card); border-radius: 14px; padding: 10px 14px; margin-bottom: 10px; }
-summary { font-weight: 600; }
-ul { margin: 8px 0 2px; padding-left: 18px; } li { margin: 3px 0; }
+.person:active { background: var(--rule); }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.stat { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--gold); border-radius: 6px; padding: 10px 12px; }
+.stat:nth-child(1) { border-left-color: var(--ok); } .stat:nth-child(2) { border-left-color: var(--warn); } .stat:nth-child(3) { border-left-color: var(--bad); }
+.stat b { display: block; font: 700 30px/1.15 var(--serif); }
+details { border-top: 1px solid var(--rule); padding: 12px 0; }
+details:last-of-type { border-bottom: 1px solid var(--rule); }
+summary { font-weight: 700; }
+ul { margin: 8px 0 2px; padding-left: 18px; } li { margin: 4px 0; }
 input[type=text], input[type=search], input[type=date], input[type=time], select {
-  width: 100%; padding: 11px 12px; border-radius: 12px; border: 1px solid rgba(127,127,127,.35);
-  background: var(--bg); color: var(--fg); margin: 4px 0; }
+  width: 100%; padding: 11px 12px; border-radius: 6px; border: 1px solid var(--rule); background: var(--field); color: var(--ink); margin: 4px 0; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-label { font-size: 13px; color: var(--hint); display: block; margin-top: 6px; }
+label { font-size: 13px; color: var(--muted); display: block; margin-top: 8px; }
 .person { cursor: pointer; }
-.tag { font-size: 12px; background: var(--btn); color: var(--btnfg); border-radius: 8px; padding: 1px 7px; margin-left: 6px; }
-nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
-  background: var(--bg); border-top: 1px solid rgba(127,127,127,.25); }
-nav button { flex: 1; border: 0; border-radius: 12px; padding: 12px 6px; background: var(--card); color: var(--fg); font-weight: 600; }
-nav button.on { background: var(--btn); color: var(--btnfg); }
-.back { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 5; }
-.sheet { position: fixed; left: 0; right: 0; bottom: 0; max-height: 88vh; overflow: auto; z-index: 6; background: var(--bg);
-  border-radius: 20px 20px 0 0; padding: 16px 14px calc(20px + env(safe-area-inset-bottom, 0px)); }
-#toast { position: fixed; left: 14px; right: 14px; top: 12px; z-index: 9; padding: 12px 14px; border-radius: 12px; color: #fff;
-  font-weight: 600; white-space: pre-line; display: none; }
+.tag { font-size: 12px; font-weight: 700; background: var(--gold); color: var(--navy-d); border-radius: 4px; padding: 1px 6px; margin-left: 6px; }
+nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--navy-d); border-top: 2px solid var(--gold); padding-bottom: env(safe-area-inset-bottom, 0px); }
+nav button { flex: 1; border: 0; border-top: 3px solid transparent; background: none; color: rgba(255,255,255,.62); padding: 14px 6px 12px; font-weight: 700; }
+nav button.on { color: var(--gold-l); border-top-color: var(--gold); }
+.back { position: fixed; inset: 0; background: rgba(3,9,22,.6); z-index: 5; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; max-height: 88vh; overflow: auto; z-index: 6; background: var(--paper);
+  border-top: 3px solid var(--gold); border-radius: 16px 16px 0 0; padding: 22px 16px calc(20px + env(safe-area-inset-bottom, 0px)); }
+.sheet::before { content: ""; position: absolute; top: 8px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--gold); }
+#toast { position: fixed; left: 14px; right: 14px; top: 12px; z-index: 9; padding: 12px 14px; border-radius: 8px; color: #fff;
+  font-weight: 600; white-space: pre-line; display: none; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+.cam { position: fixed; inset: 0; z-index: 20; background: #000; display: flex; flex-direction: column; }
+.cam video { flex: 1; min-height: 0; width: 100%; object-fit: cover; transform: scaleX(-1); background: #111; }
+.camHint { color: #fff; text-align: center; padding: 10px 14px; font-size: 15px; }
+.camBar { padding: 4px 14px calc(14px + env(safe-area-inset-bottom, 0px)); background: #000; }
+.camBar .btn.alt { color: #fff; border-color: rgba(255,255,255,.35); }
+.vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+label.btn { display: block; text-align: center; cursor: pointer; font-size: 16px; color: var(--ink); margin-top: 10px; }
 [hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
+<header class="top"><span class="seal">D</span><div><b>Xodimlar davomati</b><small>Qiziltepa tuman 1-son texnikumi</small></div></header>
 <div id="loading" class="muted">Yuklanmoqda…</div>
 
 <section id="tab-me" hidden>
@@ -70,8 +98,13 @@ nav button.on { background: var(--btn); color: var(--btnfg); }
     <div id="meState" class="big"></div>
     <div id="meDetail" class="muted"></div>
   </div>
-  <button id="punchBtn" class="punch">📍 KELDIM / KETDIM</button>
+  <div class="two punchRow">
+    <button id="btnIn" class="punch in">✅ KELDIM</button>
+    <button id="btnOut" class="punch out">🚪 KETDIM</button>
+  </div>
+  <button id="btnPing" class="punch ping" hidden>👀 Shu yerdaman</button>
   <div id="punchMsg" class="msg"></div>
+  <div id="selfieHint" class="muted" hidden></div>
   <h2>Oxirgi kunlar</h2>
   <div id="history" class="card"></div>
 </section>
@@ -89,6 +122,17 @@ nav button.on { background: var(--btn); color: var(--btnfg); }
   <div id="staffList" class="card" style="margin-top:10px"></div>
 </section>
 
+<div id="cam" class="cam" hidden>
+  <div id="camHint" class="camHint"></div>
+  <video id="camVideo" playsinline autoplay muted></video>
+  <div class="camBar">
+    <button id="camShot" class="btn">📸 Rasmga olish</button>
+    <label for="camFile" class="btn alt">Kamera ochilmasa: telefon kamerasi bilan olish</label>
+    <input type="file" id="camFile" class="vh" accept="image/*" capture="user">
+    <button id="camCancel" class="btn alt">Bekor qilish</button>
+  </div>
+</div>
+
 <nav id="nav" hidden></nav>
 <div id="back" class="back" hidden></div>
 <div id="sheet" class="sheet" hidden></div>
@@ -99,10 +143,10 @@ nav button.on { background: var(--btn); color: var(--btnfg); }
 "use strict";
 
 // >>> Apps Script "Web app" havolasini shu yerga qo'ying (/exec bilan tugaydi) <<<
-const API_URL = "BU_YERGA_APPS_SCRIPT_WEB_APP_URL";
+const API_URL = "https://script.google.com/macros/s/AKfycbyV5O7XsQ1rxDLcUhMuSSu98gfMBQiW4A7dPiC2ro2n1RqV13GE2eCdQ7EO6D3wISHb/exec";
 
 const tg = window.Telegram && window.Telegram.WebApp;
-if (tg) { tg.ready(); tg.expand(); }
+if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("#0b2a5b"); } catch (e) {} }
 
 const $ = function (id) { return document.getElementById(id); };
 function esc(s) {
@@ -206,6 +250,61 @@ function getLoc() {
   });
 }
 
+function frameToB64(src, w, h) {
+  const sc = Math.min(1, 480 / Math.max(w, h));
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(w * sc));
+  c.height = Math.max(1, Math.round(h * sc));
+  c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+  return c.toDataURL("image/jpeg", 0.6).split(",")[1];
+}
+
+function takeSelfie() {
+  return new Promise(function (resolve, reject) {
+    const cam = $("cam"), vid = $("camVideo"), hint = $("camHint"), file = $("camFile");
+    let stream = null, closed = false;
+    function close() {
+      closed = true;
+      if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+      vid.srcObject = null;
+      cam.hidden = true;
+      $("camShot").onclick = null; $("camCancel").onclick = null; file.onchange = null;
+    }
+    $("camCancel").onclick = function () { close(); reject(new Error("Bekor qilindi.")); };
+    $("camShot").onclick = function () {
+      if (!stream || !vid.videoWidth) return;
+      const b64 = frameToB64(vid, vid.videoWidth, vid.videoHeight);
+      close(); resolve({ photo: b64, psrc: "camera" });
+    };
+    file.value = "";
+    file.onchange = function () {
+      const f = file.files && file.files[0];
+      if (!f) return;
+      const img = new Image(), url = URL.createObjectURL(f);
+      img.onload = function () {
+        const b64 = frameToB64(img, img.naturalWidth, img.naturalHeight);
+        URL.revokeObjectURL(url);
+        close(); resolve({ photo: b64, psrc: "file" });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); hint.textContent = "Rasmni o'qib bo'lmadi. Qayta urinib ko'ring."; };
+      img.src = url;
+    };
+    hint.textContent = "Yuzingiz ko'rinib tursin";
+    cam.hidden = false;
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false })
+        .then(function (s) {
+          if (closed) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
+          stream = s; vid.srcObject = s;
+          if (vid.play) { try { vid.play(); } catch (e) {} }
+        })
+        .catch(function () { hint.textContent = "Kamera ochilmadi. Pastdagi tugma orqali telefon kamerasi bilan rasmga oling."; });
+    } else {
+      hint.textContent = "Kamera ochilmadi. Pastdagi tugma orqali telefon kamerasi bilan rasmga oling.";
+    }
+  });
+}
+
 function renderMe() {
   $("meName").textContent = ME.name;
   const t = ME.today;
@@ -220,11 +319,15 @@ function renderMe() {
   s.className = "big " + cls;
   $("meDetail").textContent = detail;
 
-  const b = $("punchBtn");
-  const away = t && !t.in;
-  b.disabled = !ME.punchEnabled || !!away;
-  b.hidden = false;
+  const away = !!(t && !t.in), arrived = !!(t && t.in);
+  $("btnIn").disabled = !ME.punchEnabled || away || arrived;
+  $("btnOut").disabled = !ME.punchEnabled || away || !arrived;
+  $("btnPing").hidden = !ME.ping;
+  $("btnPing").disabled = !ME.punchEnabled;
   if (!ME.punchEnabled) $("punchMsg").textContent = "Belgilash uchun botdagi 📍 tugmadan foydalaning.";
+  const sh = $("selfieHint");
+  sh.hidden = !ME.selfie;
+  if (ME.selfie) sh.textContent = "📸 Belgilashda selfie olinadi va " + ME.keepDays + " kun saqlanadi, keyin o'chiriladi.";
 
   const h = $("history");
   if (!ME.history || !ME.history.length) h.innerHTML = '<div class="muted">Hozircha yozuv yo\'q.</div>';
@@ -235,29 +338,46 @@ function renderMe() {
   }).join("");
 }
 
-async function punch() {
-  const b = $("punchBtn"), msg = $("punchMsg");
-  b.disabled = true;
+let busy = false;
+async function punch(kind, btn) {
+  const msg = $("punchMsg"), all = ["btnIn", "btnOut", "btnPing"].map($);
+  busy = true;
+  all.forEach(function (x) { x.disabled = true; });
   msg.className = "msg"; msg.textContent = "";
-  const old = b.textContent;
+  const old = btn.textContent;
   try {
-    b.textContent = "Joylashuv aniqlanmoqda…";
+    let extra = {};
+    if (ME.selfie) {
+      btn.textContent = "Kamera ochilmoqda…";
+      const shot = await takeSelfie();
+      extra = { photo: shot.photo, psrc: shot.psrc };
+    }
+    btn.textContent = "Joylashuv aniqlanmoqda…";
     const loc = await getLoc();
-    b.textContent = "Yuborilmoqda…";
-    const r = await api("punch", { lat: loc.lat, lng: loc.lng });
+    btn.textContent = "Yuborilmoqda…";
+    const r = await api("punch", Object.assign({ kind: kind, lat: loc.lat, lng: loc.lng }, extra));
     msg.textContent = r.msg || r.err || "Xatolik";
     msg.className = "msg " + (r.ok ? "ok" : "bad");
     haptic(!!r.ok);
     if (r.today !== undefined) ME.today = r.today;
+    if (r.ping !== undefined) ME.ping = r.ping;
     if (r.history) ME.history = r.history;
   } catch (e) {
     msg.textContent = e.message || "Xatolik";
     msg.className = "msg bad";
     haptic(false);
   }
-  b.textContent = old;
+  btn.textContent = old;
+  busy = false;
   renderMe();
 }
+
+async function refreshMe() {                  // "Shu yerdamisiz?" tekshiruvi kelganini bilish uchun
+  if (CURRENT !== "me" || document.hidden || busy) return;
+  try { const r = await api("me"); if (r && r.ok) { ME = r; renderMe(); } } catch (e) {}
+}
+setInterval(refreshMe, 20000);
+document.addEventListener("visibilitychange", function () { if (!document.hidden) refreshMe(); });
 
 // ---------------- Rahbar / kadr: "Hisobot" ----------------
 function sec(title, items, open) {
@@ -381,7 +501,9 @@ function openSheet(p) {
 }
 
 // ---------------- Hodisalar ----------------
-$("punchBtn").addEventListener("click", punch);
+$("btnIn").addEventListener("click", function () { punch("in", this); });
+$("btnOut").addEventListener("click", function () { punch("out", this); });
+$("btnPing").addEventListener("click", function () { punch("ping", this); });
 $("repRefresh").addEventListener("click", loadRep);
 $("q").addEventListener("input", renderStaff);
 $("kodFilter").addEventListener("change", renderStaff);
