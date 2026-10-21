@@ -83,6 +83,12 @@ nav button.on { color: var(--gold-l); border-top-color: var(--gold); }
 .camBar .btn.alt { color: #fff; border-color: rgba(255,255,255,.35); }
 .vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
 label.btn { display: block; text-align: center; cursor: pointer; font-size: 16px; color: var(--ink); margin-top: 10px; }
+.dateBar { display: grid; grid-template-columns: 52px 1fr 52px; gap: 8px; align-items: center; margin-bottom: 8px; }
+.dateBar .btn { margin: 0; padding: 11px 0; }
+.dateBar input { margin: 0; }
+.shot { margin: 12px 0; }
+.shot canvas { width: 100%; display: block; border-radius: 8px; border: 1px solid var(--rule); pointer-events: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.shot span { font-size: 13px; color: var(--muted); }
 [hidden] { display: none !important; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -115,6 +121,13 @@ label.btn { display: block; text-align: center; cursor: pointer; font-size: 16px
   <button id="repRefresh" class="btn alt">🔄 Yangilash</button>
 </section>
 
+<section id="tab-jur" hidden>
+  <h1>Kunlik jurnal</h1>
+  <div class="dateBar"><button id="dPrev" class="btn alt">‹</button><input type="date" id="jDate"><button id="dNext" class="btn alt">›</button></div>
+  <input type="search" id="jq" placeholder="Ism bo'yicha qidirish">
+  <div id="jList" class="card" style="margin-top:10px"></div>
+</section>
+
 <section id="tab-kadr" hidden>
   <h1>Kadr paneli</h1>
   <input type="search" id="q" placeholder="Ism bo'yicha qidirish">
@@ -143,7 +156,7 @@ label.btn { display: block; text-align: center; cursor: pointer; font-size: 16px
 "use strict";
 
 // >>> Apps Script "Web app" havolasini shu yerga qo'ying (/exec bilan tugaydi) <<<
-const API_URL = "https://script.google.com/macros/s/AKfycbzQoZF_66ow6DwmIaGn1IVK7FSLDl4mNsG76mW7fIAPuBC3g_A4kngcR17p0G3x8Hsh/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyV5O7XsQ1rxDLcUhMuSSu98gfMBQiW4A7dPiC2ro2n1RqV13GE2eCdQ7EO6D3wISHb/exec";
 
 const tg = window.Telegram && window.Telegram.WebApp;
 if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("#0b2a5b"); } catch (e) {} }
@@ -199,7 +212,7 @@ async function boot() {
 
   const tabs = [];
   if (ME.isStaff) tabs.push(["me", "Men"]);
-  if (ME.isAdmin) tabs.push(["rep", "Hisobot"]);
+  if (ME.isAdmin) tabs.push(["rep", "Hisobot"], ["jur", "Jurnal"]);
   if (ME.isKadr) tabs.push(["kadr", "Kadr"]);
   if (!tabs.length) return fatal("Siz ro'yxatdan o'tmagansiz. Botga o'tib /start bosing va raqamingizni yuboring.");
 
@@ -219,10 +232,11 @@ async function boot() {
 
 function go(name) {
   CURRENT = name;
-  ["me", "rep", "kadr"].forEach(function (n) { $("tab-" + n).hidden = n !== name; });
+  ["me", "rep", "jur", "kadr"].forEach(function (n) { $("tab-" + n).hidden = n !== name; });
   Array.prototype.forEach.call($("nav").children, function (b) { b.classList.toggle("on", b.dataset.tab === name); });
   if (name === "me") renderMe();
   if (name === "rep") loadRep();
+  if (name === "jur") loadJur();
   if (name === "kadr") loadKadr();
 }
 
@@ -410,6 +424,106 @@ async function loadRep() {
   }
 }
 
+// ---------------- Jurnal (kadr va direktor): har kun bo'yicha ro'yxat va rasmlar ----------------
+let JUR = null;
+function shiftDate(s, n) {
+  const t = new Date(s + "T12:00:00Z");
+  t.setUTCDate(t.getUTCDate() + n);
+  return t.toISOString().slice(0, 10);
+}
+async function loadJur() {
+  const inp = $("jDate");
+  if (!inp.value) inp.value = todayStr();
+  $("jList").innerHTML = '<div class="muted">Yuklanmoqda…</div>';
+  try {
+    const r = await api("day", { date: inp.value });
+    if (!r.ok) throw new Error("Ruxsat yo'q");
+    JUR = r.data;
+    renderJur();
+  } catch (e) {
+    $("jList").innerHTML = '<div class="bad">' + esc(e.message || "Xatolik") + "</div>";
+  }
+}
+function renderJur() {
+  if (!JUR) return;
+  const q = $("jq").value.trim().toLowerCase(), rows = [];
+  JUR.rows.forEach(function (p, i) {
+    if (q && p.name.toLowerCase().indexOf(q) < 0) return;
+    const came = !!p.in;
+    const cls = came ? (p.holat.indexOf("Kechikdi") === 0 ? "warn" : "ok") : (p.holat === "Kelmagan" || p.holat.indexOf("Kelmadi") === 0 ? "bad" : "warn");
+    const meta = [];
+    if (p.phone) meta.push(esc(p.phone));
+    if (p.dIn !== null) meta.push("📍 " + p.dIn + " m");
+    const cam = p.photos && (p.photos.in || p.photos.out || p.photos.ping) ? " 📷" : "";
+    rows.push('<div class="row person" data-j="' + i + '"><span>' + esc(p.name) + cam +
+      (meta.length ? '<br><span class="muted">' + meta.join(" · ") + "</span>" : "") + '</span><span class="' + cls + '">' +
+      esc(came ? p.in + (p.out ? "–" + p.out : "") : p.holat) + "</span></div>");
+  });
+  $("jList").innerHTML = rows.length ? rows.join("") : '<div class="muted">Hech kim topilmadi.</div>';
+}
+function shotEl(it) {                          // rasm canvas'ga chiziladi va ko'ruvchi nomi bilan belgilanadi (yuklash tugmasi yo'q)
+  return new Promise(function (resolve) {
+    const wrap = document.createElement("div"), cap = document.createElement("span");
+    wrap.className = "shot";
+    cap.textContent = it.kind + " " + it.time;
+    wrap.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    if (!it.b64) { cap.textContent += " · rasm muddati o'tgan"; wrap.appendChild(cap); return resolve(wrap); }
+    const img = new Image();
+    img.onload = function () {
+      const c = document.createElement("canvas");
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      const g = c.getContext("2d");
+      g.drawImage(img, 0, 0);
+      const u = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || {};
+      const mark = (u.first_name || "Ko'ruvchi") + " #" + (u.id || "") + " · " + JUR.date;
+      g.save();
+      g.globalAlpha = 0.3; g.fillStyle = "#fff"; g.strokeStyle = "#000"; g.lineWidth = 2;
+      g.font = "bold " + Math.max(14, Math.round(c.width / 18)) + "px sans-serif";
+      g.rotate(-0.4);
+      for (let y = -c.height; y < c.height * 2; y += c.height / 4) {
+        for (let x = -c.width; x < c.width * 2; x += c.width / 1.5) { g.strokeText(mark, x, y); g.fillText(mark, x, y); }
+      }
+      g.restore();
+      wrap.appendChild(c); wrap.appendChild(cap);
+      resolve(wrap);
+    };
+    img.onerror = function () { cap.textContent += " · rasmni o'qib bo'lmadi"; wrap.appendChild(cap); resolve(wrap); };
+    img.src = "data:image/jpeg;base64," + it.b64;
+  });
+}
+function openJ(p) {
+  const hasPhoto = p.photos && (p.photos.in || p.photos.out || p.photos.ping);
+  $("sheet").innerHTML = "<h1>" + esc(p.name) + "</h1>" +
+    '<div class="card">' +
+    (p.phone ? '<div>📞 <a href="tel:' + esc(p.phone) + '">' + esc(p.phone) + "</a></div>" : "") +
+    "<div>Holat: <b>" + esc(p.holat) + "</b></div>" +
+    (p.in ? "<div>Keldi: " + esc(p.in) + (p.dIn !== null ? " · 📍 texnikumdan " + p.dIn + " m" : "") + "</div>" : "") +
+    (p.out ? "<div>Ketdi: " + esc(p.out) + (p.dOut !== null ? " · 📍 texnikumdan " + p.dOut + " m" : "") + "</div>" : "") +
+    (p.izoh ? '<div class="muted">' + esc(p.izoh) + "</div>" : "") + "</div>" +
+    '<div id="shots"></div>' +
+    (hasPhoto ? '<button class="btn" id="btnShots">📷 Rasmlarni ko\'rish</button>' : '<div class="muted">Bu kun uchun rasm yo\'q.</div>') +
+    '<button class="btn alt" id="btnClose">Yopish</button>';
+  $("btnClose").onclick = closeSheet;
+  if (hasPhoto) $("btnShots").onclick = async function () {
+    const btn = this;
+    btn.disabled = true; btn.textContent = "Yuklanmoqda…";
+    try {
+      const r = await api("photos", { date: JUR.date, name: p.name });
+      if (!r.ok) throw new Error("Ruxsat yo'q");
+      const box = $("shots");
+      box.innerHTML = "";
+      if (!r.items.length) box.innerHTML = '<div class="muted">Rasm topilmadi.</div>';
+      for (let i = 0; i < r.items.length; i++) box.appendChild(await shotEl(r.items[i]));
+      btn.hidden = true;
+    } catch (e) {
+      toast(e.message || "Xatolik", false);
+      btn.disabled = false; btn.textContent = "📷 Rasmlarni ko'rish";
+    }
+  };
+  $("back").hidden = false;
+  $("sheet").hidden = false;
+}
+
 // ---------------- Kadr paneli ----------------
 async function loadKadr() {
   if (!STAFF) $("staffList").innerHTML = '<div class="muted">Yuklanmoqda…</div>';
@@ -508,6 +622,15 @@ $("repRefresh").addEventListener("click", loadRep);
 $("q").addEventListener("input", renderStaff);
 $("kodFilter").addEventListener("change", renderStaff);
 $("back").addEventListener("click", closeSheet);
+$("jDate").addEventListener("change", loadJur);
+$("dPrev").addEventListener("click", function () { $("jDate").value = shiftDate($("jDate").value || todayStr(), -1); loadJur(); });
+$("dNext").addEventListener("click", function () { $("jDate").value = shiftDate($("jDate").value || todayStr(), 1); loadJur(); });
+$("jq").addEventListener("input", renderJur);
+$("jList").addEventListener("click", function (e) {
+  let el = e.target;
+  while (el && !(el.dataset && el.dataset.j !== undefined)) el = el.parentNode;
+  if (el && JUR) openJ(JUR.rows[Number(el.dataset.j)]);
+});
 $("staffList").addEventListener("click", function (e) {
   let el = e.target;
   while (el && !(el.dataset && el.dataset.i !== undefined)) el = el.parentNode;
